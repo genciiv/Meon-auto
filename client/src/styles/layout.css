@@ -1,0 +1,35 @@
+.app-shell{ min-height:100vh; display:flex; flex-direction:column; }
+.container{ width:min(1140px, calc(100% - 32px)); margin:0 auto; }
+main.container{ padding: 18px 0 36px; flex:1; }
+
+.topbar{
+  position: sticky; top:0; z-index:30;
+  backdrop-filter: blur(14px);
+  background: rgba(246,248,252,.75);
+  border-bottom: 1px solid var(--border);
+}
+.topbar-inner{
+  height: 72px;
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 14px;
+}
+
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand-mark{
+  width: 42px; height: 42px; border-radius: 14px;
+  display:grid; place-items:center;
+  background: linear-gradient(135deg, var(--primary), var(--primary2));
+  box-shadow: 0 12px 24px rgba(37,99,235,.25);
+  font-weight: 900;
+  color: #fff;
+}
+.brand-text{ font-size: 18px; letter-spacing: .2px; }
+
+.nav{ display:flex; align-items:center; gap: 8px; }
+.nav-link{
+  display:flex; align-items:center; gap:8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  color: var(--muted);
+  border: 1px solid transparent;
+}

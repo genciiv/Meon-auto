@@ -1,0 +1,13 @@
+.grid{
+  display:grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+.col-12{ grid-column: span 12; }
+.col-8{ grid-column: span 8; }
+.col-4{ grid-column: span 4; }
+
+@media (max-width: 900px){
+  .col-8, .col-4{ grid-column: span 12; }
+  .nav{ display:none; }
+}
