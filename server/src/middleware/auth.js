@@ -1,21 +1,29 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
 
-  if (!token) return res.status(401).json({ message: "Duhet te jesh i loguar." });
+  if (!token) return res.status(401).json({ message: "Nuk je i loguar." });
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = payload; // { id, role }
+    const user = await User.findById(payload.id).select("_id name email role");
+    if (!user) return res.status(401).json({ message: "User nuk ekziston." });
+
+    req.user = user;
     next();
   } catch {
-    return res.status(401).json({ message: "Token i pavlefshem ose ka skaduar." });
+    return res.status(401).json({ message: "Token i pavlefshëm." });
   }
 }
 
-export function requireAdmin(req, res, next) {
-  if (req.user?.role !== "admin") return res.status(403).json({ message: "Nuk ke akses." });
-  next();
+export async function requireAdmin(req, res, next) {
+  await requireAuth(req, res, async () => {
+    if (req.user?.role !== "admin") {
+      return res.status(403).json({ message: "Nuk ke akses." });
+    }
+    next();
+  });
 }

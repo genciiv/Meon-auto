@@ -236,3 +236,154 @@
   border-color: rgba(245, 158, 11, 0.35);
   background: rgba(245, 158, 11, 0.12);
 }
+
+
+/* =========================
+   ADMIN DASHBOARD - PRO UI
+========================= */
+
+.admin-dash {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.admin-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.admin-hero h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.admin-hero p {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.admin-quick {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f172a;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.admin-pill:hover {
+  background: #f8fafc;
+}
+
+.admin-tiles {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 900px) {
+  .admin-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-tile {
+  grid-column: span 6;
+  border: 1px solid #eef2f7;
+  border-radius: 16px;
+  padding: 16px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.05);
+  display: grid;
+  gap: 10px;
+}
+
+.admin-tile-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-tile-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+  margin: 0;
+}
+
+.admin-tile-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(37, 99, 235, 0.10);
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  color: #2563eb;
+}
+
+.admin-tile-desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.admin-tile-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  color: #0f172a;
+}
+
+.admin-link:hover {
+  background: #f8fafc;
+}
+
+.admin-link.primary {
+  background: #2563eb;
+  color: #fff;
+  border-color: #2563eb;
+}
+
+.admin-link.primary:hover {
+  background: #1d4ed8;
+}
