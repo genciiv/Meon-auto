@@ -17,7 +17,40 @@ function tryGetUserId(req) {
   }
 }
 
-// GET /api/vehicles?type=car|truck&make=&yearMin=&yearMax=&priceMin=&priceMax=&truckType=&page=&limit=
+function isFeaturedActive(v) {
+  if (!v.featured) return false;
+  if (!v.featuredUntil) return true;
+  return new Date(v.featuredUntil).getTime() > Date.now();
+}
+
+// ✅ GET /api/vehicles/featured?type=car|truck&limit=8
+router.get("/featured", async (req, res) => {
+  const type = req.query.type;
+  const limit = Math.min(24, Math.max(1, Number(req.query.limit || 8)));
+
+  const q = { status: "active", featured: true };
+  if (type) q.type = type;
+
+  // featured duhet të mos ketë skaduar
+  q.$or = [{ featuredUntil: null }, { featuredUntil: { $gt: new Date() } }];
+
+  const items = await Vehicle.find(q).sort({ updatedAt: -1 }).limit(limit);
+  res.json({ items });
+});
+
+// ✅ GET /api/vehicles/recent?type=car|truck&limit=12
+router.get("/recent", async (req, res) => {
+  const type = req.query.type;
+  const limit = Math.min(48, Math.max(1, Number(req.query.limit || 12)));
+
+  const q = { status: "active" };
+  if (type) q.type = type;
+
+  const items = await Vehicle.find(q).sort({ createdAt: -1 }).limit(limit);
+  res.json({ items });
+});
+
+// ✅ GET /api/vehicles?....
 router.get("/", async (req, res) => {
   const {
     type,
@@ -80,26 +113,21 @@ router.get("/", async (req, res) => {
   });
 });
 
-// GET /api/vehicles/:id  (kur user e hap -> saved te viewed)
+// ✅ GET /api/vehicles/:id (ruan viewed nëse ka token)
 router.get("/:id", async (req, res) => {
   const vehicle = await Vehicle.findById(req.params.id);
   if (!vehicle) return res.status(404).json({ message: "Mjeti nuk u gjet." });
 
   const userId = tryGetUserId(req);
   if (userId) {
-    // update "viewed" (upsert + lastViewedAt)
     const user = await User.findById(userId).select("viewed");
     if (user) {
       const vid = vehicle._id.toString();
       const idx = user.viewed.findIndex((v) => v.vehicleId.toString() === vid);
 
-      if (idx >= 0) {
-        user.viewed[idx].lastViewedAt = new Date();
-      } else {
-        user.viewed.unshift({ vehicleId: vehicle._id, lastViewedAt: new Date() });
-      }
+      if (idx >= 0) user.viewed[idx].lastViewedAt = new Date();
+      else user.viewed.unshift({ vehicleId: vehicle._id, lastViewedAt: new Date() });
 
-      // mbaj max 50
       user.viewed = user.viewed.slice(0, 50);
       await user.save();
     }

@@ -2,7 +2,24 @@ import { useEffect, useState } from "react";
 import api from "../../lib/api.js";
 import Toast from "../../components/layout/Toast.jsx";
 
+import {
+  FaCarSide,
+  FaTruckMoving,
+  FaRegEdit,
+  FaTrash,
+  FaEuroSign,
+  FaCalendarAlt,
+  FaMapMarkerAlt,
+  FaRoad,
+  FaGasPump,
+  FaCogs,
+  FaImage,
+  FaStar,
+  FaTag,
+} from "react-icons/fa";
+
 const empty = {
+  _id: null,
   type: "car",
   title: "",
   make: "",
@@ -17,8 +34,18 @@ const empty = {
   description: "",
   imagesText: "",
   featured: false,
+  featuredUntil: "",
   status: "active",
 };
+
+function toInputDateTime(dt) {
+  if (!dt) return "";
+  const d = new Date(dt);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
 
 export default function AdminVehicles() {
   const [items, setItems] = useState([]);
@@ -31,7 +58,9 @@ export default function AdminVehicles() {
     setItems(data.items || []);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   function parseImages(text) {
     return String(text || "")
@@ -40,32 +69,81 @@ export default function AdminVehicles() {
       .filter(Boolean);
   }
 
-  async function createVehicle(e) {
+  function resetForm() {
+    setForm(empty);
+    setMsg({ type: "info", text: "" });
+  }
+
+  function editItem(v) {
+    setMsg({ type: "info", text: "" });
+    setForm({
+      _id: v._id,
+      type: v.type || "car",
+      title: v.title || "",
+      make: v.make || "",
+      model: v.model || "",
+      year: v.year ?? "",
+      price: v.price ?? "",
+      mileageKm: v.mileageKm ?? "",
+      fuel: v.fuel || "",
+      gearbox: v.gearbox || "",
+      city: v.city || "",
+      truckType: v.truckType || "",
+      description: v.description || "",
+      imagesText: (v.images || []).join("\n"),
+      featured: !!v.featured,
+      featuredUntil: toInputDateTime(v.featuredUntil),
+      status: v.status || "active",
+    });
+  }
+
+  async function save(e) {
     e.preventDefault();
     setMsg({ type: "info", text: "" });
 
-    if (!form.title.trim()) {
-      setMsg({ type: "error", text: "Title është i detyrueshëm." });
+    if (!String(form.title).trim()) {
+      setMsg({ type: "error", text: "Titulli është i detyrueshëm." });
       return;
     }
 
     setLoading(true);
     try {
       const payload = {
-        ...form,
+        type: form.type,
+        title: form.title,
+        make: form.make,
+        model: form.model,
         year: form.year ? Number(form.year) : null,
         price: form.price ? Number(form.price) : null,
         mileageKm: form.mileageKm ? Number(form.mileageKm) : null,
+        fuel: form.fuel,
+        gearbox: form.gearbox,
+        city: form.city,
+        truckType: form.truckType,
+        description: form.description,
         images: parseImages(form.imagesText),
+        featured: !!form.featured,
+        featuredUntil: form.featuredUntil
+          ? new Date(form.featuredUntil).toISOString()
+          : null,
+        status: form.status,
       };
-      delete payload.imagesText;
 
-      await api.post("/admin/vehicles", payload);
-      setMsg({ type: "success", text: "Mjeti u shtua me sukses!" });
-      setForm(empty);
+      if (form._id) {
+        await api.put(`/admin/vehicles/${form._id}`, payload);
+        setMsg({ type: "success", text: "U përditësua me sukses!" });
+      } else {
+        await api.post("/admin/vehicles", payload);
+        setMsg({ type: "success", text: "U shtua me sukses!" });
+      }
+
       await load();
+      resetForm();
     } catch (err) {
-      setMsg({ type: "error", text: err?.response?.data?.message || "Gabim në shtim." });
+      setMsg({
+        type: "error",
+        text: err?.response?.data?.message || "Gabim gjatë ruajtjes.",
+      });
     } finally {
       setLoading(false);
     }
@@ -75,153 +153,337 @@ export default function AdminVehicles() {
     if (!confirm("Ta fshijmë këtë mjet?")) return;
     await api.delete(`/admin/vehicles/${id}`);
     await load();
-  }
-
-  async function toggleFeatured(v) {
-    await api.put(`/admin/vehicles/${v._id}`, { featured: !v.featured });
-    await load();
+    if (form._id === id) resetForm();
   }
 
   return (
-    <div className="grid">
-      <section className="card col-5">
-        <h3 style={{ marginTop: 0 }}>Shto mjet</h3>
+    <div className="admin-page">
+      {/* FORM */}
+      <section className="admin-card">
+        <div className="admin-top">
+          <h3 className="admin-title">
+            {form._id ? "Edito mjet" : "Shto mjet"}
+          </h3>
+          <button type="button" className="admin-reset" onClick={resetForm}>
+            Reset
+          </button>
+        </div>
+
+        <div className="admin-subtitle">
+          Plotëso të dhënat e mjetit në mënyrë profesionale. Foto me URL tani —
+          upload real e bëjmë në hapin tjetër.
+        </div>
+
         <Toast type={msg.type} message={msg.text} />
 
-        <form onSubmit={createVehicle}>
-          <label className="label">Lloji</label>
-          <select className="select" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-            <option value="car">Makina</option>
-            <option value="truck">Kamion</option>
-          </select>
-
-          <div style={{ height: 10 }} />
-
-          <label className="label">Titulli*</label>
-          <input className="input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="p.sh. Mercedes C200 2016" />
-
-          <div style={{ height: 10 }} />
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label className="label">Marka</label>
-              <input className="input" value={form.make} onChange={(e) => setForm({ ...form, make: e.target.value })} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="label">Modeli</label>
-              <input className="input" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+        <form onSubmit={save} className="admin-grid">
+          {/* Type */}
+          <div>
+            <label className="admin-label">Lloji</label>
+            <div className="admin-field">
+              {form.type === "car" ? <FaCarSide /> : <FaTruckMoving />}
+              <select
+                className="admin-select"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              >
+                <option value="car">Makina</option>
+                <option value="truck">Kamion</option>
+              </select>
             </div>
           </div>
 
-          <div style={{ height: 10 }} />
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label className="label">Viti</label>
-              <input className="input" value={form.year} onChange={(e) => setForm({ ...form, year: e.target.value })} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="label">Çmimi (€)</label>
-              <input className="input" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-            </div>
-          </div>
-
-          <div style={{ height: 10 }} />
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label className="label">KM</label>
-              <input className="input" value={form.mileageKm} onChange={(e) => setForm({ ...form, mileageKm: e.target.value })} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="label">Qyteti</label>
-              <input className="input" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          {/* Status */}
+          <div>
+            <label className="admin-label">Status</label>
+            <div className="admin-field">
+              <FaTag />
+              <select
+                className="admin-select"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+                <option value="active">active</option>
+                <option value="sold">sold</option>
+                <option value="hidden">hidden</option>
+              </select>
             </div>
           </div>
 
-          <div style={{ height: 10 }} />
-
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label className="label">Karburanti</label>
-              <input className="input" value={form.fuel} onChange={(e) => setForm({ ...form, fuel: e.target.value })} placeholder="Benzinë/Naftë/..." />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label className="label">Transmisioni</label>
-              <input className="input" value={form.gearbox} onChange={(e) => setForm({ ...form, gearbox: e.target.value })} placeholder="Manual/Automat" />
+          {/* Title */}
+          <div className="admin-col-full">
+            <label className="admin-label">Titulli *</label>
+            <div className="admin-field">
+              <FaCarSide />
+              <input
+                className="admin-input"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                placeholder="p.sh. Mercedes C200 2016, Automat, Full"
+              />
             </div>
           </div>
 
-          <div style={{ height: 10 }} />
+          {/* Make */}
+          <div>
+            <label className="admin-label">Marka</label>
+            <div className="admin-field">
+              <FaTag />
+              <input
+                className="admin-input"
+                value={form.make}
+                onChange={(e) => setForm({ ...form, make: e.target.value })}
+                placeholder="Mercedes"
+              />
+            </div>
+          </div>
 
+          {/* Model */}
+          <div>
+            <label className="admin-label">Modeli</label>
+            <div className="admin-field">
+              <FaTag />
+              <input
+                className="admin-input"
+                value={form.model}
+                onChange={(e) => setForm({ ...form, model: e.target.value })}
+                placeholder="C200"
+              />
+            </div>
+          </div>
+
+          {/* Year */}
+          <div>
+            <label className="admin-label">Viti</label>
+            <div className="admin-field">
+              <FaCalendarAlt />
+              <input
+                className="admin-input"
+                value={form.year}
+                onChange={(e) => setForm({ ...form, year: e.target.value })}
+                placeholder="2016"
+              />
+            </div>
+          </div>
+
+          {/* Price */}
+          <div>
+            <label className="admin-label">Çmimi (€)</label>
+            <div className="admin-field">
+              <FaEuroSign />
+              <input
+                className="admin-input"
+                value={form.price}
+                onChange={(e) => setForm({ ...form, price: e.target.value })}
+                placeholder="13500"
+              />
+            </div>
+          </div>
+
+          {/* KM */}
+          <div>
+            <label className="admin-label">KM</label>
+            <div className="admin-field">
+              <FaRoad />
+              <input
+                className="admin-input"
+                value={form.mileageKm}
+                onChange={(e) =>
+                  setForm({ ...form, mileageKm: e.target.value })
+                }
+                placeholder="180000"
+              />
+            </div>
+          </div>
+
+          {/* City */}
+          <div>
+            <label className="admin-label">Qyteti</label>
+            <div className="admin-field">
+              <FaMapMarkerAlt />
+              <input
+                className="admin-input"
+                value={form.city}
+                onChange={(e) => setForm({ ...form, city: e.target.value })}
+                placeholder="Tiranë"
+              />
+            </div>
+          </div>
+
+          {/* Fuel */}
+          <div>
+            <label className="admin-label">Karburanti</label>
+            <div className="admin-field">
+              <FaGasPump />
+              <input
+                className="admin-input"
+                value={form.fuel}
+                onChange={(e) => setForm({ ...form, fuel: e.target.value })}
+                placeholder="Naftë / Benzinë / Hybrid"
+              />
+            </div>
+          </div>
+
+          {/* Gearbox */}
+          <div>
+            <label className="admin-label">Transmisioni</label>
+            <div className="admin-field">
+              <FaCogs />
+              <input
+                className="admin-input"
+                value={form.gearbox}
+                onChange={(e) =>
+                  setForm({ ...form, gearbox: e.target.value })
+                }
+                placeholder="Manual / Automatik"
+              />
+            </div>
+          </div>
+
+          {/* TruckType if truck */}
           {form.type === "truck" && (
-            <>
-              <label className="label">Truck Type</label>
-              <input className="input" value={form.truckType} onChange={(e) => setForm({ ...form, truckType: e.target.value })} placeholder="p.sh. trailers, buses..." />
-              <div style={{ height: 10 }} />
-            </>
+            <div className="admin-col-full">
+              <label className="admin-label">Lloji i kamionit</label>
+              <div className="admin-field">
+                <FaTruckMoving />
+                <input
+                  className="admin-input"
+                  value={form.truckType}
+                  onChange={(e) =>
+                    setForm({ ...form, truckType: e.target.value })
+                  }
+                  placeholder="trailers / buses / agricultural..."
+                />
+              </div>
+            </div>
           )}
 
-          <label className="label">Status</label>
-          <select className="select" value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value })}>
-            <option value="active">Active</option>
-            <option value="sold">Sold</option>
-            <option value="hidden">Hidden</option>
-          </select>
+          {/* Featured */}
+          <div className="admin-col-full admin-check">
+            <input
+              type="checkbox"
+              checked={form.featured}
+              onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+            />
+            <FaStar /> Featured (Promovuar)
+          </div>
 
-          <div style={{ height: 10 }} />
+          {/* Featured until */}
+          <div className="admin-col-full">
+            <label className="admin-label">Featured deri (opsionale)</label>
+            <div className="admin-field">
+              <FaCalendarAlt />
+              <input
+                type="datetime-local"
+                className="admin-input"
+                value={form.featuredUntil}
+                onChange={(e) =>
+                  setForm({ ...form, featuredUntil: e.target.value })
+                }
+              />
+            </div>
+            <div className="admin-help">
+              Nëse e lë bosh, featured s’ka skadim. Nëse vendos datë, skadon
+              automatikisht.
+            </div>
+          </div>
 
-          <label className="label">Foto (URL) – 1 për rresht</label>
-          <textarea className="textarea" rows={4} value={form.imagesText} onChange={(e) => setForm({ ...form, imagesText: e.target.value })} placeholder="https://...\nhttps://..." />
+          {/* Images */}
+          <div className="admin-col-full">
+            <label className="admin-label">Foto (URL) – 1 për rresht</label>
+            <div className="admin-field" style={{ position: "relative" }}>
+              <FaImage style={{ position: "absolute", left: 12, top: 16 }} />
+              <textarea
+                className="admin-textarea"
+                value={form.imagesText}
+                onChange={(e) =>
+                  setForm({ ...form, imagesText: e.target.value })
+                }
+                placeholder="https://...\nhttps://..."
+              />
+            </div>
+          </div>
 
-          <div style={{ height: 10 }} />
+          {/* Description */}
+          <div className="admin-col-full">
+            <label className="admin-label">Përshkrimi</label>
+            <textarea
+              className="admin-textarea"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              placeholder="Shkruaj një përshkrim të shkurtër dhe të qartë..."
+            />
+          </div>
 
-          <label className="label">Përshkrimi</label>
-          <textarea className="textarea" rows={4} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-
-          <div style={{ height: 10 }} />
-
-          <label style={{ display: "flex", gap: 10, alignItems: "center", fontWeight: 800 }}>
-            <input type="checkbox" checked={form.featured} onChange={(e) => setForm({ ...form, featured: e.target.checked })} />
-            Featured (Promovuar)
-          </label>
-
-          <div style={{ height: 14 }} />
-
-          <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} disabled={loading}>
-            {loading ? "Duke shtuar..." : "Shto mjet"}
-          </button>
+          {/* Submit */}
+          <div className="admin-col-full">
+            <button className="admin-btn" disabled={loading}>
+              {loading
+                ? "Duke ruajtur..."
+                : form._id
+                ? "Ruaj ndryshimet"
+                : "Shto mjet"}
+            </button>
+          </div>
         </form>
       </section>
 
-      <section className="col-7">
-        <div className="card">
-          <h3 style={{ marginTop: 0 }}>Lista e mjeteve</h3>
-          <div className="muted" style={{ marginTop: -6, marginBottom: 12 }}>
-            Kliko Featured për promovim, ose Fshi.
-          </div>
+      {/* LIST */}
+      <section className="admin-card">
+        <div className="admin-top">
+          <h3 className="admin-title">Lista e mjeteve</h3>
+          <span className="admin-badge">{items.length} total</span>
+        </div>
 
-          {items.length === 0 ? (
-            <div className="muted">S’ka mjete ende.</div>
-          ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
-              {items.map((v) => (
-                <div key={v._id} style={{ gridColumn: "span 6" }} className="card">
-                  <div style={{ fontWeight: 900 }}>{v.title}</div>
-                  <div className="muted">{v.type} • {v.city || "—"} • {v.price ? `${v.price}€` : "-"}</div>
-                  <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
-                    <button className="btn btn-ghost" type="button" onClick={() => toggleFeatured(v)} style={{ flex: 1, justifyContent: "center" }}>
-                      {v.featured ? "Featured: ON" : "Featured: OFF"}
+        <div className="admin-subtitle">
+          Kliko “Edito” për të mbushur formën automatikisht, ose “Fshi”.
+        </div>
+
+        {items.length === 0 ? (
+          <div className="admin-subtitle">S’ka mjete ende.</div>
+        ) : (
+          <div className="admin-list">
+            {items.map((v) => (
+              <div key={v._id} className="admin-item">
+                <div className="admin-item-top">
+                  <div>
+                    <div className="admin-item-title">{v.title}</div>
+                    <div className="admin-item-meta">
+                      {v.type} • {v.city || "—"} •{" "}
+                      {v.price ? `${v.price}€` : "-"} • {v.status}{" "}
+                      {v.featured ? (
+                        <span className="admin-badge featured" style={{ marginLeft: 8 }}>
+                          <FaStar /> Featured
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="admin-actions">
+                    <button
+                      type="button"
+                      className="admin-action-btn"
+                      onClick={() => editItem(v)}
+                      title="Edito"
+                    >
+                      <FaRegEdit />
                     </button>
-                    <button className="btn btn-ghost" type="button" onClick={() => removeVehicle(v._id)} style={{ flex: 1, justifyContent: "center" }}>
-                      Fshi
+                    <button
+                      type="button"
+                      className="admin-action-btn"
+                      onClick={() => removeVehicle(v._id)}
+                      title="Fshi"
+                    >
+                      <FaTrash />
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );

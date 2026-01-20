@@ -7,6 +7,8 @@ import "./styles/theme.css";
 import "./styles/layout.css";
 import "./styles/forms.css";
 import "./styles/cards.css";
+import "./styles/admin.css";
+
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
