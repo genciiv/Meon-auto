@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import "./loadEnv.js";
+
 
 import { connectDB } from "./config/db.js";
 
@@ -9,6 +11,7 @@ import vehicleRoutes from "./routes/vehicle.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 
 
 dotenv.config();
@@ -32,6 +35,7 @@ app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/blog", blogRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/upload", uploadRoutes);
 
 
 // Error fallback

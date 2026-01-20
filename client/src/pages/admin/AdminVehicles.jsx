@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import api from "../../lib/api.js";
 import Toast from "../../components/layout/Toast.jsx";
+import MultiImageUpload from "./MultiImageUpload.jsx";
+
 
 import {
   FaCarSide,
@@ -13,7 +15,6 @@ import {
   FaRoad,
   FaGasPump,
   FaCogs,
-  FaImage,
   FaStar,
   FaTag,
 } from "react-icons/fa";
@@ -32,7 +33,7 @@ const empty = {
   city: "",
   truckType: "",
   description: "",
-  imagesText: "",
+  images: [],           // ✅ tani është array
   featured: false,
   featuredUntil: "",
   status: "active",
@@ -62,13 +63,6 @@ export default function AdminVehicles() {
     load();
   }, []);
 
-  function parseImages(text) {
-    return String(text || "")
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }
-
   function resetForm() {
     setForm(empty);
     setMsg({ type: "info", text: "" });
@@ -90,7 +84,7 @@ export default function AdminVehicles() {
       city: v.city || "",
       truckType: v.truckType || "",
       description: v.description || "",
-      imagesText: (v.images || []).join("\n"),
+      images: v.images || [],                 // ✅
       featured: !!v.featured,
       featuredUntil: toInputDateTime(v.featuredUntil),
       status: v.status || "active",
@@ -121,7 +115,7 @@ export default function AdminVehicles() {
         city: form.city,
         truckType: form.truckType,
         description: form.description,
-        images: parseImages(form.imagesText),
+        images: form.images || [],            // ✅
         featured: !!form.featured,
         featuredUntil: form.featuredUntil
           ? new Date(form.featuredUntil).toISOString()
@@ -170,8 +164,7 @@ export default function AdminVehicles() {
         </div>
 
         <div className="admin-subtitle">
-          Plotëso të dhënat e mjetit në mënyrë profesionale. Foto me URL tani —
-          upload real e bëjmë në hapin tjetër.
+          Plotëso të dhënat e mjetit. Fotot ngarkohen direkt (Cloudinary).
         </div>
 
         <Toast type={msg.type} message={msg.text} />
@@ -219,12 +212,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="p.sh. Mercedes C200 2016, Automat, Full"
+                placeholder="p.sh. VW Jetta 2012, Automat, 2.0"
               />
             </div>
           </div>
 
-          {/* Make */}
           <div>
             <label className="admin-label">Marka</label>
             <div className="admin-field">
@@ -233,12 +225,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.make}
                 onChange={(e) => setForm({ ...form, make: e.target.value })}
-                placeholder="Mercedes"
+                placeholder="VW"
               />
             </div>
           </div>
 
-          {/* Model */}
           <div>
             <label className="admin-label">Modeli</label>
             <div className="admin-field">
@@ -247,12 +238,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.model}
                 onChange={(e) => setForm({ ...form, model: e.target.value })}
-                placeholder="C200"
+                placeholder="Jetta"
               />
             </div>
           </div>
 
-          {/* Year */}
           <div>
             <label className="admin-label">Viti</label>
             <div className="admin-field">
@@ -261,12 +251,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.year}
                 onChange={(e) => setForm({ ...form, year: e.target.value })}
-                placeholder="2016"
+                placeholder="2012"
               />
             </div>
           </div>
 
-          {/* Price */}
           <div>
             <label className="admin-label">Çmimi (€)</label>
             <div className="admin-field">
@@ -275,12 +264,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
-                placeholder="13500"
+                placeholder="6500"
               />
             </div>
           </div>
 
-          {/* KM */}
           <div>
             <label className="admin-label">KM</label>
             <div className="admin-field">
@@ -291,12 +279,11 @@ export default function AdminVehicles() {
                 onChange={(e) =>
                   setForm({ ...form, mileageKm: e.target.value })
                 }
-                placeholder="180000"
+                placeholder="230000"
               />
             </div>
           </div>
 
-          {/* City */}
           <div>
             <label className="admin-label">Qyteti</label>
             <div className="admin-field">
@@ -305,12 +292,11 @@ export default function AdminVehicles() {
                 className="admin-input"
                 value={form.city}
                 onChange={(e) => setForm({ ...form, city: e.target.value })}
-                placeholder="Tiranë"
+                placeholder="Fier"
               />
             </div>
           </div>
 
-          {/* Fuel */}
           <div>
             <label className="admin-label">Karburanti</label>
             <div className="admin-field">
@@ -324,7 +310,6 @@ export default function AdminVehicles() {
             </div>
           </div>
 
-          {/* Gearbox */}
           <div>
             <label className="admin-label">Transmisioni</label>
             <div className="admin-field">
@@ -340,7 +325,6 @@ export default function AdminVehicles() {
             </div>
           </div>
 
-          {/* TruckType if truck */}
           {form.type === "truck" && (
             <div className="admin-col-full">
               <label className="admin-label">Lloji i kamionit</label>
@@ -352,13 +336,12 @@ export default function AdminVehicles() {
                   onChange={(e) =>
                     setForm({ ...form, truckType: e.target.value })
                   }
-                  placeholder="trailers / buses / agricultural..."
+                  placeholder="Trailer / Bus / etc"
                 />
               </div>
             </div>
           )}
 
-          {/* Featured */}
           <div className="admin-col-full admin-check">
             <input
               type="checkbox"
@@ -368,7 +351,6 @@ export default function AdminVehicles() {
             <FaStar /> Featured (Promovuar)
           </div>
 
-          {/* Featured until */}
           <div className="admin-col-full">
             <label className="admin-label">Featured deri (opsionale)</label>
             <div className="admin-field">
@@ -382,29 +364,17 @@ export default function AdminVehicles() {
                 }
               />
             </div>
-            <div className="admin-help">
-              Nëse e lë bosh, featured s’ka skadim. Nëse vendos datë, skadon
-              automatikisht.
-            </div>
           </div>
 
-          {/* Images */}
+          {/* ✅ UPLOAD FOTO */}
           <div className="admin-col-full">
-            <label className="admin-label">Foto (URL) – 1 për rresht</label>
-            <div className="admin-field" style={{ position: "relative" }}>
-              <FaImage style={{ position: "absolute", left: 12, top: 16 }} />
-              <textarea
-                className="admin-textarea"
-                value={form.imagesText}
-                onChange={(e) =>
-                  setForm({ ...form, imagesText: e.target.value })
-                }
-                placeholder="https://...\nhttps://..."
-              />
-            </div>
+            <label className="admin-label">Foto (Upload)</label>
+            <MultiImageUpload
+              value={form.images}
+              onChange={(imgs) => setForm({ ...form, images: imgs })}
+            />
           </div>
 
-          {/* Description */}
           <div className="admin-col-full">
             <label className="admin-label">Përshkrimi</label>
             <textarea
@@ -413,11 +383,10 @@ export default function AdminVehicles() {
               onChange={(e) =>
                 setForm({ ...form, description: e.target.value })
               }
-              placeholder="Shkruaj një përshkrim të shkurtër dhe të qartë..."
+              placeholder="Përshkrim i shkurtër, i qartë, profesional..."
             />
           </div>
 
-          {/* Submit */}
           <div className="admin-col-full">
             <button className="admin-btn" disabled={loading}>
               {loading
@@ -438,7 +407,7 @@ export default function AdminVehicles() {
         </div>
 
         <div className="admin-subtitle">
-          Kliko “Edito” për të mbushur formën automatikisht, ose “Fshi”.
+          “Edito” mbush formën, “Fshi” e heq mjetin.
         </div>
 
         {items.length === 0 ? (
@@ -480,6 +449,22 @@ export default function AdminVehicles() {
                     </button>
                   </div>
                 </div>
+
+                {v.images?.[0] ? (
+                  <div style={{ marginTop: 10 }}>
+                    <img
+                      src={v.images[0]}
+                      alt="cover"
+                      style={{
+                        width: "100%",
+                        height: 140,
+                        objectFit: "cover",
+                        borderRadius: 14,
+                        border: "1px solid #eef2f7",
+                      }}
+                    />
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
