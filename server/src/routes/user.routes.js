@@ -1,67 +1,77 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { requireAuth } from "../middleware/auth.js";
 import User from "../models/User.js";
-import Vehicle from "../models/Vehicle.js";
-import Lead from "../models/Lead.js";
 
 const router = Router();
 
-// GET /api/users/me
-router.get("/me", requireAuth, async (req, res) => {
-  const user = await User.findById(req.user.id).select("name email role favorites viewed");
-  if (!user) return res.status(404).json({ message: "User nuk u gjet." });
-  res.json({ user });
+// gjithçka këtu kërkon login
+router.use(requireAuth);
+
+// GET /api/users/me  (opsionale nëse e përdor)
+router.get("/me", async (req, res) => {
+  res.json({ user: req.user });
 });
 
-// POST /api/users/favorites/:vehicleId (toggle)
-router.post("/favorites/:vehicleId", requireAuth, async (req, res) => {
+// ✅ GET /api/users/favorites
+router.get("/favorites", async (req, res) => {
+  const user = await User.findById(req.user._id)
+    .select("favorites")
+    .populate({ path: "favorites", options: { sort: { createdAt: -1 } } });
+
+  res.json({ items: user?.favorites || [] });
+});
+
+// ✅ POST /api/users/favorites/:vehicleId  (toggle)
+router.post("/favorites/:vehicleId", async (req, res) => {
   const { vehicleId } = req.params;
 
-  const vehicle = await Vehicle.findById(vehicleId).select("_id");
-  if (!vehicle) return res.status(404).json({ message: "Mjeti nuk u gjet." });
+  if (!mongoose.Types.ObjectId.isValid(vehicleId)) {
+    return res.status(400).json({ message: "ID e pavlefshme." });
+  }
 
-  const user = await User.findById(req.user.id);
-  const exists = user.favorites.some((id) => id.toString() === vehicleId);
+  const user = await User.findById(req.user._id).select("favorites");
+  const exists = user.favorites.some((id) => String(id) === String(vehicleId));
 
   if (exists) {
-    user.favorites = user.favorites.filter((id) => id.toString() !== vehicleId);
+    user.favorites = user.favorites.filter((id) => String(id) !== String(vehicleId));
   } else {
-    user.favorites.unshift(vehicle._id);
+    user.favorites.unshift(vehicleId);
   }
 
   await user.save();
-  res.json({ favorites: user.favorites });
+  res.json({ ok: true, favorites: user.favorites });
 });
 
-// GET /api/users/favorites
-router.get("/favorites", requireAuth, async (req, res) => {
-  const user = await User.findById(req.user.id).populate("favorites");
-  res.json({ favorites: user?.favorites || [] });
+// ✅ POST /api/users/viewed/:vehicleId  (ruan historikun)
+router.post("/viewed/:vehicleId", async (req, res) => {
+  const { vehicleId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(vehicleId)) {
+    return res.status(400).json({ message: "ID e pavlefshme." });
+  }
+
+  await User.updateOne(
+    { _id: req.user._id, "viewed.vehicleId": vehicleId },
+    { $set: { "viewed.$.lastViewedAt": new Date() } }
+  );
+
+  // nëse nuk ekziston, shtoje
+  await User.updateOne(
+    { _id: req.user._id, "viewed.vehicleId": { $ne: vehicleId } },
+    { $push: { viewed: { vehicleId, lastViewedAt: new Date() } } }
+  );
+
+  res.json({ ok: true });
 });
 
 // GET /api/users/viewed
-router.get("/viewed", requireAuth, async (req, res) => {
-  const user = await User.findById(req.user.id).select("viewed");
-  res.json({ viewed: user?.viewed || [] });
-});
+router.get("/viewed", async (req, res) => {
+  const user = await User.findById(req.user._id)
+    .select("viewed")
+    .populate("viewed.vehicleId");
 
-// POST /api/users/contact  (vetem logged-in)
-router.post("/contact", requireAuth, async (req, res) => {
-  const { vehicleId, message, phone, channel } = req.body || {};
-  if (!vehicleId || !message) return res.status(400).json({ message: "Mungon vehicleId ose mesazhi." });
-
-  const vehicle = await Vehicle.findById(vehicleId).select("_id");
-  if (!vehicle) return res.status(404).json({ message: "Mjeti nuk u gjet." });
-
-  const lead = await Lead.create({
-    userId: req.user.id,
-    vehicleId,
-    message: String(message).trim(),
-    phone: phone ? String(phone).trim() : "",
-    channel: channel === "whatsapp" ? "whatsapp" : "form",
-  });
-
-  res.status(201).json({ ok: true, leadId: lead._id });
+  res.json({ items: user?.viewed || [] });
 });
 
 export default router;

@@ -9,18 +9,20 @@ export async function requireAuth(req, res, next) {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
+
     const user = await User.findById(payload.id).select("_id name email role");
     if (!user) return res.status(401).json({ message: "User nuk ekziston." });
 
     req.user = user;
     next();
-  } catch {
+  } catch (err) {
     return res.status(401).json({ message: "Token i pavlefshëm." });
   }
 }
 
 export async function requireAdmin(req, res, next) {
-  await requireAuth(req, res, async () => {
+  // e kalon fillimisht nga auth
+  await requireAuth(req, res, () => {
     if (req.user?.role !== "admin") {
       return res.status(403).json({ message: "Nuk ke akses." });
     }
