@@ -19,6 +19,8 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import AdminVehicles from "./pages/admin/AdminVehicles.jsx";
 import AdminLeads from "./pages/admin/AdminLeads.jsx";
 
+import "./styles/vehicle-details.css";
+
 function RequireAuth({ children }) {
   const token = localStorage.getItem("autoMeon_token");
   if (!token) return <Navigate to="/hyr" replace />;
@@ -42,7 +44,6 @@ export default function App() {
 
       <main className="container">
         <Routes>
-          {/* Public */}
           <Route path="/" element={<Home />} />
           <Route path="/makina" element={<Cars />} />
           <Route path="/kamione" element={<Trucks />} />
@@ -50,11 +51,9 @@ export default function App() {
           <Route path="/blog" element={<Blog />} />
           <Route path="/blog/:slug" element={<BlogPost />} />
 
-          {/* Auth */}
           <Route path="/hyr" element={<Login />} />
           <Route path="/regjistrohu" element={<Register />} />
 
-          {/* Profile (protected) */}
           <Route
             path="/profili"
             element={
@@ -64,7 +63,6 @@ export default function App() {
             }
           />
 
-          {/* Admin (protected) */}
           <Route
             path="/admin"
             element={
@@ -90,7 +88,6 @@ export default function App() {
             }
           />
 
-          {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

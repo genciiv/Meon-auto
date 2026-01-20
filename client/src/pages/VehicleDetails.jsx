@@ -1,178 +1,176 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
-import { FaHeart, FaRegHeart, FaWhatsapp, FaPhoneAlt } from "react-icons/fa";
-import api from "../lib/api";
-import Toast from "../components/layout/Toast";
+import { useParams, Link } from "react-router-dom";
+import api from "../lib/api.js";
+import {
+  FaMapMarkerAlt,
+  FaRoad,
+  FaGasPump,
+  FaCogs,
+  FaEuroSign,
+  FaArrowLeft,
+} from "react-icons/fa";
 
 export default function VehicleDetails() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const token = localStorage.getItem("autoMeon_token");
 
   const [vehicle, setVehicle] = useState(null);
-  const [isFav, setIsFav] = useState(false);
-  const [msg, setMsg] = useState({ type: "info", text: "" });
-  const [contactForm, setContactForm] = useState({ message: "", phone: "" });
-
-  async function load() {
-    // Ky request, nese ka token, regjistron automatikisht "viewed" ne backend
-    const { data } = await api.get(`/vehicles/${id}`);
-    setVehicle(data.vehicle);
-
-    if (token) {
-      const favRes = await api.get("/users/favorites");
-      const ids = (favRes.data.favorites || []).map((v) => v._id);
-      setIsFav(ids.includes(id));
-    }
-  }
+  const [activeImg, setActiveImg] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setErr("");
+      setVehicle(null);
+      setActiveImg(0);
+
+      try {
+        // endpoint tipik: GET /api/vehicles/:id
+        const { data } = await api.get(`/vehicles/${id}`);
+
+        // pranon te dy formatet:
+        // 1) { item: {...} }
+        // 2) { ...vehicle }
+        const item = data?.item ? data.item : data;
+
+        if (!item || !item._id) {
+          throw new Error("Mjeti nuk u gjet (format i gabuar nga API).");
+        }
+
+        if (!cancelled) {
+          setVehicle(item);
+          setActiveImg(0);
+        }
+      } catch (e) {
+        const msg =
+          e?.response?.data?.message ||
+          e?.message ||
+          "Gabim gjatë ngarkimit të mjetit.";
+        if (!cancelled) setErr(msg);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => {
+      cancelled = true;
+    };
   }, [id]);
 
-  async function toggleFav() {
-    if (!token) {
-      navigate("/hyr");
-      return;
-    }
-    await api.post(`/users/favorites/${id}`);
-    // refresh status
-    const favRes = await api.get("/users/favorites");
-    const ids = (favRes.data.favorites || []).map((v) => v._id);
-    setIsFav(ids.includes(id));
+  if (loading) {
+    return (
+      <div className="page">
+        <div className="vd-loading">Duke u ngarkuar…</div>
+      </div>
+    );
   }
 
-  async function sendContact(channel = "form") {
-    if (!token) {
-      navigate("/hyr");
-      return;
-    }
-    setMsg({ type: "info", text: "" });
+  if (err) {
+    return (
+      <div className="page">
+        <div className="vd-error">
+          <div className="vd-error-title">Nuk u ngarkua mjeti</div>
+          <div className="vd-error-text">{err}</div>
 
-    try {
-      await api.post("/users/contact", {
-        vehicleId: id,
-        message: contactForm.message || "Jam i interesuar per kete mjet. Me kontaktoni, ju lutem.",
-        phone: contactForm.phone,
-        channel,
-      });
-      setMsg({ type: "success", text: "Mesazhi u dërgua! Admini do të të kontaktojë." });
-      setContactForm({ message: "", phone: "" });
-    } catch (err) {
-      setMsg({ type: "error", text: err?.response?.data?.message || "Nuk u dërgua mesazhi." });
-    }
+          <div style={{ marginTop: 12 }}>
+            <Link className="vd-back" to="/makina">
+              <FaArrowLeft /> Kthehu te lista
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  if (!vehicle) return <div className="card">Duke ngarkuar...</div>;
-
-  const img = vehicle.images?.[0] || "https://via.placeholder.com/1200x700?text=Auto+Meon";
+  const images = Array.isArray(vehicle?.images) ? vehicle.images : [];
+  const cover = images[activeImg] || images[0] || "";
 
   return (
-    <div className="grid">
-      <section className="card col-8">
-        <div
-          style={{
-            borderRadius: 16,
-            overflow: "hidden",
-            border: "1px solid rgba(15,23,42,.10)",
-            marginBottom: 14,
-          }}
+    <div className="page vehicle-details">
+      <div className="vd-topbar">
+        <Link
+          className="vd-back"
+          to={vehicle?.type === "truck" ? "/kamione" : "/makina"}
         >
-          <img src={img} alt={vehicle.title} style={{ width: "100%", height: 340, objectFit: "cover" }} />
-        </div>
+          <FaArrowLeft /> Kthehu
+        </Link>
+      </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
-          <div>
-            <h2 style={{ margin: 0 }}>{vehicle.title}</h2>
-            <div className="muted" style={{ marginTop: 6 }}>
-              {vehicle.city || "—"} • {vehicle.year || "—"} • {vehicle.mileageKm ? `${vehicle.mileageKm.toLocaleString()} km` : "—"}
-            </div>
-          </div>
-
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontWeight: 900, fontSize: 22, color: "#2563eb" }}>
-              {vehicle.price ? `${vehicle.price.toLocaleString()} €` : "Çmimi: -"}
-            </div>
-            <div className="muted">{vehicle.fuel || "—"} • {vehicle.gearbox || "—"}</div>
-          </div>
-        </div>
-
-        <hr style={{ borderColor: "rgba(15,23,42,.10)", margin: "14px 0" }} />
-
-        <h3>Pershkrimi</h3>
-        <p className="muted">{vehicle.description || "Pa pershkrim."}</p>
-
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
-          <button className="btn btn-ghost" type="button" onClick={toggleFav}>
-            {isFav ? <FaHeart /> : <FaRegHeart />} {isFav ? "Në favoritë" : "Shto te Favoritet"}
-          </button>
-
-          {!token ? (
-            <Link className="btn btn-primary" to="/hyr">
-              <FaWhatsapp /> Kontakto (Hyr)
-            </Link>
+      {/* GALERI */}
+      <div className="gallery">
+        <div className="gallery-main">
+          {cover ? (
+            <img
+              src={cover}
+              alt={vehicle?.title || "mjet"}
+              onError={(e) => {
+                e.currentTarget.style.display = "none";
+              }}
+            />
           ) : (
-            <>
-              <button className="btn btn-primary" type="button" onClick={() => sendContact("whatsapp")}>
-                <FaWhatsapp /> Kontakto
-              </button>
-              <button className="btn btn-ghost" type="button" onClick={() => sendContact("form")}>
-                <FaPhoneAlt /> Dërgo mesazh
-              </button>
-            </>
+            <div className="gallery-placeholder">Pa foto</div>
           )}
         </div>
-      </section>
 
-      <aside className="card col-4">
-        <h3 style={{ marginTop: 0 }}>Kontakti</h3>
-        <div className="muted" style={{ marginTop: -6 }}>
-          Kontakti është i disponueshëm vetëm për përdorues të regjistruar.
-        </div>
-
-        <div style={{ height: 10 }} />
-        <Toast type={msg.type} message={msg.text} />
-
-        <label className="label">Telefon (opsionale)</label>
-        <input
-          className="input"
-          value={contactForm.phone}
-          onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
-          placeholder="p.sh. +355..."
-          disabled={!token}
-        />
-
-        <div style={{ height: 10 }} />
-
-        <label className="label">Mesazhi</label>
-        <textarea
-          className="textarea"
-          rows={5}
-          value={contactForm.message}
-          onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-          placeholder="Shkruaj mesazhin..."
-          disabled={!token}
-        />
-
-        <div style={{ height: 12 }} />
-
-        <button
-          className="btn btn-primary"
-          type="button"
-          style={{ width: "100%", justifyContent: "center" }}
-          onClick={() => sendContact("form")}
-          disabled={!token}
-        >
-          Dërgo
-        </button>
-
-        {!token && (
-          <div className="muted" style={{ marginTop: 12 }}>
-            <Link to="/hyr" style={{ color: "#2563eb", fontWeight: 900 }}>Hyr / Regjistrohu</Link> për të kontaktuar.
+        {images.length > 1 && (
+          <div className="gallery-thumbs">
+            {images.map((img, i) => (
+              <button
+                key={`${img}-${i}`}
+                type="button"
+                className={`thumb ${i === activeImg ? "active" : ""}`}
+                onClick={() => setActiveImg(i)}
+                title="Shiko foton"
+              >
+                <img
+                  src={img}
+                  alt="thumb"
+                  onError={(e) => {
+                    e.currentTarget.style.display = "none";
+                  }}
+                />
+              </button>
+            ))}
           </div>
         )}
-      </aside>
+      </div>
+
+      {/* INFO */}
+      <div className="vehicle-info">
+        <h1 className="vehicle-title">{vehicle.title}</h1>
+
+        {vehicle.price != null && (
+          <div className="vehicle-price">
+            <FaEuroSign /> {Number(vehicle.price).toLocaleString()} €
+          </div>
+        )}
+
+        <div className="vehicle-meta">
+          <span>
+            <FaMapMarkerAlt /> {vehicle.city || "—"}
+          </span>
+          <span>
+            <FaRoad />{" "}
+            {vehicle.mileageKm != null
+              ? `${Number(vehicle.mileageKm).toLocaleString()} km`
+              : "—"}
+          </span>
+          <span>
+            <FaGasPump /> {vehicle.fuel || "—"}
+          </span>
+          <span>
+            <FaCogs /> {vehicle.gearbox || "—"}
+          </span>
+        </div>
+
+        <div className="vehicle-description">
+          {vehicle.description || "Pa përshkrim."}
+        </div>
+      </div>
     </div>
   );
 }

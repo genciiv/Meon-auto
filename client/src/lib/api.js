@@ -1,17 +1,18 @@
 import axios from "axios";
 
-const API_BASE =
-  import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+// ❗ PA /api këtu
+const baseURL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 const api = axios.create({
-  baseURL: API_BASE,
+  baseURL, // http://localhost:5000
   withCredentials: false,
 });
 
-// vendos token automatikisht në çdo request
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("autoMeon_token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
   return config;
 });
 
