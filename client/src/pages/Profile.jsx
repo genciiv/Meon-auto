@@ -1,11 +1,9 @@
 import { useEffect, useState } from "react";
 import api from "../lib/api.js";
-import {
-  fetchMe,
-  getStoredUser,
-  setStoredUser,
-} from "../lib/auth.js";
+import { fetchMe, getStoredUser, setStoredUser } from "../lib/auth.js";
 import VehicleCard from "../components/layout/VehicleCard.jsx";
+
+const getId = (v) => v?._id || v?.id || "";
 
 export default function Profile() {
   const [me, setMe] = useState(getStoredUser());
@@ -21,7 +19,11 @@ export default function Profile() {
     setMe(user);
 
     const favRes = await api.get("/users/favorites");
-    setFavorites(favRes.data.favorites || []);
+    const favList = (favRes.data.favorites || []).map((v) => ({
+      ...v,
+      _id: v._id || v.id,
+    }));
+    setFavorites(favList);
 
     const viewedRes = await api.get("/users/viewed");
     setViewed(viewedRes.data.viewed || []);
@@ -33,20 +35,16 @@ export default function Profile() {
     load();
   }, []);
 
-  if (loading) {
-    return <div className="card">Duke ngarkuar profilin…</div>;
-  }
+  if (loading) return <div className="card">Duke ngarkuar profilin…</div>;
 
   return (
     <div className="grid">
-      {/* LEFT */}
       <aside className="card col-4">
         <h3>Profili</h3>
         <div style={{ fontWeight: 800 }}>{me?.name}</div>
         <div className="muted">{me?.email}</div>
       </aside>
 
-      {/* RIGHT */}
       <section className="col-8">
         <div className="card" style={{ marginBottom: 14 }}>
           <h3>Favoritet</h3>
@@ -62,12 +60,8 @@ export default function Profile() {
               }}
             >
               {favorites.map((v) => (
-                <div key={v._id} style={{ gridColumn: "span 6" }}>
-                  <VehicleCard
-                    v={v}
-                    isFav={true}
-                    onFavChanged={load}
-                  />
+                <div key={getId(v)} style={{ gridColumn: "span 6" }}>
+                  <VehicleCard v={v} isFav={true} onFavChanged={load} />
                 </div>
               ))}
             </div>
@@ -78,9 +72,7 @@ export default function Profile() {
           <h3>Të hapura së fundmi</h3>
 
           {viewed.length === 0 ? (
-            <div className="muted">
-              Nuk ke hapur asnjë mjet ende.
-            </div>
+            <div className="muted">Nuk ke hapur asnjë mjet ende.</div>
           ) : (
             viewed.map((v, i) => (
               <div key={i} className="muted">

@@ -11,6 +11,8 @@ const TRUCK_TYPES = [
   { key: "semiTrailerTrucks", label: "Kamionë me Gjysmërimorkio" },
 ];
 
+const getId = (v) => v?._id || v?.id || "";
+
 export default function Trucks() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export default function Trucks() {
       return;
     }
     const { data } = await api.get("/users/favorites");
-    const ids = (data.favorites || []).map((v) => v._id);
+    const ids = (data.favorites || []).map(getId).filter(Boolean);
     setFavoritesSet(new Set(ids));
   }
 
@@ -45,7 +47,13 @@ export default function Trucks() {
     });
 
     const { data } = await api.get("/vehicles", { params });
-    setItems(data.items || []);
+
+    const list = (data.items || []).map((v) => ({
+      ...v,
+      _id: v._id || v.id, // unifikim
+    }));
+
+    setItems(list);
     setLoading(false);
   }
 
@@ -89,13 +97,17 @@ export default function Trucks() {
           <input
             className="input"
             value={filters.priceMin}
-            onChange={(e) => setFilters({ ...filters, priceMin: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, priceMin: e.target.value })
+            }
             placeholder="Min"
           />
           <input
             className="input"
             value={filters.priceMax}
-            onChange={(e) => setFilters({ ...filters, priceMax: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, priceMax: e.target.value })
+            }
             placeholder="Max"
           />
         </div>
@@ -136,7 +148,13 @@ export default function Trucks() {
         ) : items.length === 0 ? (
           <div className="card">Nuk u gjet asnjë listim.</div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(12, 1fr)",
+              gap: 14,
+            }}
+          >
             {items.map((v) => (
               <div key={v._id} style={{ gridColumn: "span 6" }}>
                 <VehicleCard

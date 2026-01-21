@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import api from "../lib/api.js";
 import VehicleCard from "../components/layout/VehicleCard.jsx";
 
+function getId(v) {
+  return v?._id || v?.id || "";
+}
+
 export default function Cars() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +29,7 @@ export default function Cars() {
       return;
     }
     const { data } = await api.get("/users/favorites");
-    const ids = (data.favorites || []).map((v) => v._id);
+    const ids = (data.favorites || []).map((v) => getId(v)).filter(Boolean);
     setFavoritesSet(new Set(ids));
   }
 
@@ -38,7 +42,13 @@ export default function Cars() {
     });
 
     const { data } = await api.get("/vehicles", { params });
-    setItems(data.items || []);
+
+    const list = (data.items || []).map((v) => ({
+      ...v,
+      _id: v._id || v.id, // unifikim
+    }));
+
+    setItems(list);
     setLoading(false);
   }
 
@@ -95,13 +105,17 @@ export default function Cars() {
           <input
             className="input"
             value={filters.priceMin}
-            onChange={(e) => setFilters({ ...filters, priceMin: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, priceMin: e.target.value })
+            }
             placeholder="Min"
           />
           <input
             className="input"
             value={filters.priceMax}
-            onChange={(e) => setFilters({ ...filters, priceMax: e.target.value })}
+            onChange={(e) =>
+              setFilters({ ...filters, priceMax: e.target.value })
+            }
             placeholder="Max"
           />
         </div>
@@ -142,7 +156,13 @@ export default function Cars() {
         ) : items.length === 0 ? (
           <div className="card">Nuk u gjet asnjë listim.</div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 14 }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(12, 1fr)",
+              gap: 14,
+            }}
+          >
             {items.map((v) => (
               <div key={v._id} style={{ gridColumn: "span 6" }}>
                 <VehicleCard

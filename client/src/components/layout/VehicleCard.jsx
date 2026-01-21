@@ -6,25 +6,27 @@ export default function VehicleCard({ v, isFav = false, onFavChanged }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("autoMeon_token");
 
+  const vid = v?._id || v?.id;
+
   async function toggleFav() {
     if (!token) {
       navigate("/hyr");
       return;
     }
-    await api.post(`/users/favorites/${v._id}`);
+    if (!vid) return;
+
+    await api.post(`/users/favorites/${vid}`);
     onFavChanged && onFavChanged();
   }
 
-  const img =
-    v.images?.[0] ||
-    "https://via.placeholder.com/800x500?text=Auto+Meon";
+  const img = v?.images?.[0] || "https://via.placeholder.com/800x500?text=Auto+Meon";
 
   return (
     <div className="card">
-      <Link to={`/mjeti/${v._id}`}>
+      <Link to={`/mjeti/${vid}`}>
         <img
           src={img}
-          alt={v.title}
+          alt={v?.title || "mjet"}
           style={{
             width: "100%",
             height: 180,
@@ -34,14 +36,14 @@ export default function VehicleCard({ v, isFav = false, onFavChanged }) {
           }}
         />
 
-        <h4 style={{ margin: "6px 0" }}>{v.title}</h4>
+        <h4 style={{ margin: "6px 0" }}>{v?.title}</h4>
 
         <div className="muted" style={{ display: "flex", gap: 6 }}>
-          <FaMapMarkerAlt /> {v.city || "—"}
+          <FaMapMarkerAlt /> {v?.city || "—"}
         </div>
 
         <div style={{ fontWeight: 800, marginTop: 6 }}>
-          {v.price ? `${v.price.toLocaleString()} €` : "Çmimi: -"}
+          {v?.price ? `${Number(v.price).toLocaleString()} €` : "Çmimi: -"}
         </div>
       </Link>
 

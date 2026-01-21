@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../lib/api.js";
 import {
@@ -18,6 +18,11 @@ export default function VehicleDetails() {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
 
+  const backTo = useMemo(() => {
+    if (!vehicle) return "/makina";
+    return vehicle?.type === "truck" ? "/kamione" : "/makina";
+  }, [vehicle]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -28,20 +33,20 @@ export default function VehicleDetails() {
       setActiveImg(0);
 
       try {
-        // endpoint tipik: GET /api/vehicles/:id
+        // baseURL = .../api, kështu path është vetëm /vehicles/...
         const { data } = await api.get(`/vehicles/${id}`);
 
-        // pranon te dy formatet:
+        // ✅ prano 3 formatet:
         // 1) { item: {...} }
-        // 2) { ...vehicle }
-        const item = data?.item ? data.item : data;
+        // 2) { vehicle: {...} }
+        // 3) { ...vehicle }
+        const item = data?.item || data?.vehicle || data;
 
-        if (!item || !item._id) {
-          throw new Error("Mjeti nuk u gjet (format i gabuar nga API).");
-        }
+        const realId = item?._id || item?.id;
+        if (!item || !realId) throw new Error("Mjeti nuk u gjet.");
 
         if (!cancelled) {
-          setVehicle(item);
+          setVehicle({ ...item, _id: item._id || item.id }); // unifikim për UI
           setActiveImg(0);
         }
       } catch (e) {
@@ -92,15 +97,11 @@ export default function VehicleDetails() {
   return (
     <div className="page vehicle-details">
       <div className="vd-topbar">
-        <Link
-          className="vd-back"
-          to={vehicle?.type === "truck" ? "/kamione" : "/makina"}
-        >
+        <Link className="vd-back" to={backTo}>
           <FaArrowLeft /> Kthehu
         </Link>
       </div>
 
-      {/* GALERI */}
       <div className="gallery">
         <div className="gallery-main">
           {cover ? (
@@ -139,7 +140,6 @@ export default function VehicleDetails() {
         )}
       </div>
 
-      {/* INFO */}
       <div className="vehicle-info">
         <h1 className="vehicle-title">{vehicle.title}</h1>
 
