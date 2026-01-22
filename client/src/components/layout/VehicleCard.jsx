@@ -1,60 +1,73 @@
 import { Link, useNavigate } from "react-router-dom";
-import { FaHeart, FaRegHeart, FaMapMarkerAlt } from "react-icons/fa";
+import { FaHeart, FaRegHeart, FaMapMarkerAlt, FaStar } from "react-icons/fa";
 import api from "../../lib/api.js";
 
 export default function VehicleCard({ v, isFav = false, onFavChanged }) {
   const navigate = useNavigate();
   const token = localStorage.getItem("autoMeon_token");
 
-  const vid = v?._id || v?.id;
+  async function toggleFav(e) {
+    e?.preventDefault();
+    e?.stopPropagation();
 
-  async function toggleFav() {
     if (!token) {
       navigate("/hyr");
       return;
     }
-    if (!vid) return;
-
-    await api.post(`/users/favorites/${vid}`);
+    await api.post(`/users/favorites/${v._id}`);
     onFavChanged && onFavChanged();
   }
 
-  const img = v?.images?.[0] || "https://via.placeholder.com/800x500?text=Auto+Meon";
+  const img =
+    v.images?.[0] ||
+    "https://via.placeholder.com/900x600?text=Auto+Meon";
+
+  const priceText =
+    v.price != null ? `${Number(v.price).toLocaleString()} €` : "Çmimi: -";
 
   return (
-    <div className="card">
-      <Link to={`/mjeti/${vid}`}>
-        <img
-          src={img}
-          alt={v?.title || "mjet"}
-          style={{
-            width: "100%",
-            height: 180,
-            objectFit: "cover",
-            borderRadius: 12,
-            marginBottom: 10,
-          }}
-        />
+    <Link to={`/mjeti/${v._id}`} className="vcard">
+      <div className="vcard-media">
+        <img src={img} alt={v.title || "mjet"} />
+        {v.featured ? (
+          <span className="vcard-badge">
+            <FaStar /> Featured
+          </span>
+        ) : null}
 
-        <h4 style={{ margin: "6px 0" }}>{v?.title}</h4>
+        <button
+          type="button"
+          className="vcard-fav"
+          onClick={toggleFav}
+          title={isFav ? "Hiq nga favoritët" : "Shto në favoritë"}
+        >
+          {isFav ? <FaHeart /> : <FaRegHeart />}
+        </button>
+      </div>
 
-        <div className="muted" style={{ display: "flex", gap: 6 }}>
-          <FaMapMarkerAlt /> {v?.city || "—"}
+      <div className="vcard-body">
+        <div className="vcard-title">{v.title || "Pa titull"}</div>
+
+        <div className="vcard-sub">
+          <span className="vcard-city">
+            <FaMapMarkerAlt /> {v.city || "—"}
+          </span>
+          <span className="vcard-make">
+            {v.make || "—"} {v.model || ""}
+          </span>
         </div>
 
-        <div style={{ fontWeight: 800, marginTop: 6 }}>
-          {v?.price ? `${Number(v.price).toLocaleString()} €` : "Çmimi: -"}
-        </div>
-      </Link>
+        <div className="vcard-price">{priceText}</div>
 
-      <button
-        onClick={toggleFav}
-        className="btn btn-ghost"
-        style={{ width: "100%", marginTop: 10 }}
-      >
-        {isFav ? <FaHeart /> : <FaRegHeart />}{" "}
-        {isFav ? "Në favoritë" : "Shto favorit"}
-      </button>
-    </div>
+        <div className="vcard-meta">
+          <span>{v.year ?? "—"}</span>
+          <span>{v.fuel || "—"}</span>
+          <span>{v.gearbox || "—"}</span>
+          <span>
+            {v.mileageKm != null ? `${Number(v.mileageKm).toLocaleString()} km` : "—"}
+          </span>
+        </div>
+      </div>
+    </Link>
   );
 }

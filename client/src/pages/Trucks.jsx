@@ -11,21 +11,29 @@ const TRUCK_TYPES = [
   { key: "semiTrailerTrucks", label: "Kamionë me Gjysmërimorkio" },
 ];
 
-const getId = (v) => v?._id || v?.id || "";
+const initialFilters = {
+  truckType: "",
+  city: "",
+  fuel: "",
+  gearbox: "",
+  priceMin: "",
+  priceMax: "",
+  mileageMin: "",
+  mileageMax: "",
+  sort: "new",
+};
 
 export default function Trucks() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [filters, setFilters] = useState({
-    truckType: "",
-    city: "",
-    priceMin: "",
-    priceMax: "",
-    sort: "new",
-  });
-
+  const [filters, setFilters] = useState(initialFilters);
   const [favoritesSet, setFavoritesSet] = useState(new Set());
+
+  // pagination
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const limit = 12;
 
   async function loadFavorites() {
     const token = localStorage.getItem("autoMeon_token");
@@ -34,137 +42,209 @@ export default function Trucks() {
       return;
     }
     const { data } = await api.get("/users/favorites");
-    const ids = (data.favorites || []).map(getId).filter(Boolean);
+    const ids = (data.favorites || []).map((v) => v._id);
     setFavoritesSet(new Set(ids));
   }
 
-  async function load() {
-    setLoading(true);
-
-    const params = { type: "truck", ...filters };
+  function buildParams(extra = {}) {
+    const params = {
+      type: "truck",
+      featuredFirst: 1,
+      limit,
+      ...filters,
+      ...extra,
+    };
     Object.keys(params).forEach((k) => {
-      if (params[k] === "") delete params[k];
+      if (params[k] === "" || params[k] == null) delete params[k];
     });
+    return params;
+  }
 
-    const { data } = await api.get("/vehicles", { params });
-
-    const list = (data.items || []).map((v) => ({
-      ...v,
-      _id: v._id || v.id, // unifikim
-    }));
-
-    setItems(list);
+  async function loadFirstPage() {
+    setLoading(true);
+    const { data } = await api.get("/vehicles", { params: buildParams({ page: 1 }) });
+    setItems(data.items || []);
+    setPage(data.page || 1);
+    setPages(data.pages || 1);
     setLoading(false);
   }
 
+  async function loadMore() {
+    const next = page + 1;
+    if (next > pages) return;
+
+    const { data } = await api.get("/vehicles", { params: buildParams({ page: next }) });
+    setItems((prev) => [...prev, ...(data.items || [])]);
+    setPage(data.page || next);
+    setPages(data.pages || pages);
+  }
+
   useEffect(() => {
-    load();
+    loadFirstPage();
     loadFavorites();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <div className="grid">
-      <aside className="card col-4">
-        <h3 style={{ marginTop: 0 }}>Kategoritë</h3>
-
-        <label className="label">Lloji</label>
-        <select
-          className="select"
-          value={filters.truckType}
-          onChange={(e) => setFilters({ ...filters, truckType: e.target.value })}
-        >
-          {TRUCK_TYPES.map((t) => (
-            <option key={t.key} value={t.key}>
-              {t.label}
-            </option>
-          ))}
-        </select>
-
-        <div style={{ height: 10 }} />
-
-        <label className="label">Qyteti</label>
-        <input
-          className="input"
-          value={filters.city}
-          onChange={(e) => setFilters({ ...filters, city: e.target.value })}
-          placeholder="p.sh. Durrës"
-        />
-
-        <div style={{ height: 10 }} />
-
-        <label className="label">Çmimi (min/max) €</label>
-        <div style={{ display: "flex", gap: 10 }}>
-          <input
-            className="input"
-            value={filters.priceMin}
-            onChange={(e) =>
-              setFilters({ ...filters, priceMin: e.target.value })
-            }
-            placeholder="Min"
-          />
-          <input
-            className="input"
-            value={filters.priceMax}
-            onChange={(e) =>
-              setFilters({ ...filters, priceMax: e.target.value })
-            }
-            placeholder="Max"
-          />
+    <div className="listings">
+      <aside className="filters">
+        <div className="filters-head">
+          <h3>Filtra (Kamionë)</h3>
+          <button
+            type="button"
+            className="btn btn-ghost"
+            onClick={() => setFilters(initialFilters)}
+          >
+            Reset
+          </button>
         </div>
 
-        <div style={{ height: 10 }} />
+        <div className="filters-grid">
+          <div>
+            <label className="label">Kategoria</label>
+            <select
+              className="select"
+              value={filters.truckType}
+              onChange={(e) => setFilters({ ...filters, truckType: e.target.value })}
+            >
+              {TRUCK_TYPES.map((t) => (
+                <option key={t.key} value={t.key}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <label className="label">Renditja</label>
-        <select
-          className="select"
-          value={filters.sort}
-          onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
-        >
-          <option value="new">Më të rejat</option>
-          <option value="priceAsc">Çmimi në rritje</option>
-          <option value="priceDesc">Çmimi në zbritje</option>
-        </select>
+          <div>
+            <label className="label">Qyteti</label>
+            <input
+              className="input"
+              value={filters.city}
+              onChange={(e) => setFilters({ ...filters, city: e.target.value })}
+              placeholder="p.sh. Durrës"
+            />
+          </div>
 
-        <div style={{ height: 14 }} />
+          <div>
+            <label className="label">Karburanti</label>
+            <input
+              className="input"
+              value={filters.fuel}
+              onChange={(e) => setFilters({ ...filters, fuel: e.target.value })}
+              placeholder="p.sh. Naftë"
+            />
+          </div>
 
-        <button
-          className="btn btn-primary"
-          type="button"
-          style={{ width: "100%", justifyContent: "center" }}
-          onClick={() => load()}
-        >
-          Apliko filtrat
-        </button>
+          <div>
+            <label className="label">Kambio</label>
+            <input
+              className="input"
+              value={filters.gearbox}
+              onChange={(e) => setFilters({ ...filters, gearbox: e.target.value })}
+              placeholder="p.sh. Manual"
+            />
+          </div>
+
+          <div className="row2">
+            <label className="label">Çmimi € (min/max)</label>
+            <div className="two">
+              <input
+                className="input"
+                value={filters.priceMin}
+                onChange={(e) => setFilters({ ...filters, priceMin: e.target.value })}
+                placeholder="Min"
+              />
+              <input
+                className="input"
+                value={filters.priceMax}
+                onChange={(e) => setFilters({ ...filters, priceMax: e.target.value })}
+                placeholder="Max"
+              />
+            </div>
+          </div>
+
+          <div className="row2">
+            <label className="label">Kilometra (min/max)</label>
+            <div className="two">
+              <input
+                className="input"
+                value={filters.mileageMin}
+                onChange={(e) => setFilters({ ...filters, mileageMin: e.target.value })}
+                placeholder="Min"
+              />
+              <input
+                className="input"
+                value={filters.mileageMax}
+                onChange={(e) => setFilters({ ...filters, mileageMax: e.target.value })}
+                placeholder="Max"
+              />
+            </div>
+          </div>
+
+          <div className="row2">
+            <label className="label">Renditja</label>
+            <select
+              className="select"
+              value={filters.sort}
+              onChange={(e) => setFilters({ ...filters, sort: e.target.value })}
+            >
+              <option value="new">Më të rejat</option>
+              <option value="priceAsc">Çmimi në rritje</option>
+              <option value="priceDesc">Çmimi në zbritje</option>
+            </select>
+          </div>
+
+          <button
+            className="btn btn-primary filters-cta"
+            type="button"
+            onClick={() => loadFirstPage()}
+          >
+            Apliko filtrat
+          </button>
+
+          <div className="filters-note">Featured shfaqen të parat automatikisht.</div>
+        </div>
       </aside>
 
-      <section className="col-8">
-        <h2 style={{ marginTop: 0 }}>Kamionë</h2>
-        <div className="muted" style={{ marginTop: -6, marginBottom: 12 }}>
-          Zgjidh kategorinë dhe shfleto listimet.
+      <section className="results">
+        <div className="results-head">
+          <div>
+            <h2>Kamionë</h2>
+            <div className="muted">Zgjidh kategorinë dhe shfleto listimet.</div>
+          </div>
+
+          <div className="results-count">
+            {loading ? "Duke ngarkuar..." : `${items.length} rezultate`}
+          </div>
         </div>
 
         {loading ? (
-          <div className="card">Duke ngarkuar...</div>
+          <div className="results-skeleton">Duke ngarkuar…</div>
         ) : items.length === 0 ? (
-          <div className="card">Nuk u gjet asnjë listim.</div>
+          <div className="results-empty">Nuk u gjet asnjë listim.</div>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(12, 1fr)",
-              gap: 14,
-            }}
-          >
-            {items.map((v) => (
-              <div key={v._id} style={{ gridColumn: "span 6" }}>
+          <>
+            <div className="cards-grid">
+              {items.map((v) => (
                 <VehicleCard
+                  key={v._id}
                   v={v}
                   isFav={favoritesSet.has(v._id)}
                   onFavChanged={loadFavorites}
                 />
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            <div className="loadmore">
+              {page < pages ? (
+                <button className="btn btn-ghost" type="button" onClick={loadMore}>
+                  Load more
+                </button>
+              ) : (
+                <div className="muted">S’ka më rezultate.</div>
+              )}
+            </div>
+          </>
         )}
       </section>
     </div>
