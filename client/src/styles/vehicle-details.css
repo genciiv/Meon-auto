@@ -1,12 +1,11 @@
 /* =========================
-   VEHICLE DETAILS – PRO UI
+   VEHICLE DETAILS - PRO UI
 ========================= */
 
 .vehicle-details {
-  padding: 16px 0 44px;
+  padding: 18px 0 40px;
 }
 
-/* Topbar */
 .vd-topbar {
   margin: 6px 0 14px;
 }
@@ -23,12 +22,9 @@
   font-size: 12px;
   color: #0f172a;
   text-decoration: none;
-  transition: 0.15s ease;
 }
-
 .vd-back:hover {
   background: #f8fafc;
-  transform: translateY(-1px);
 }
 
 /* Layout */
@@ -38,26 +34,19 @@
   gap: 18px;
   align-items: start;
 }
-
 @media (max-width: 980px) {
   .vd-layout {
     grid-template-columns: 1fr;
   }
 }
 
-/* Card base */
-.vd-card {
+/* Gallery card */
+.gallery {
   background: #fff;
   border: 1px solid #eef2f7;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
-}
-
-/* -------------------------
-   GALLERY CARD
--------------------------- */
-.gallery {
   padding: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
 }
 
 .gallery-main {
@@ -69,33 +58,30 @@
 
 .gallery-main img {
   width: 100%;
-  height: 420px;
+  height: 390px;
   object-fit: cover;
   display: block;
 }
-
 @media (max-width: 980px) {
   .gallery-main img {
-    height: 290px;
+    height: 280px;
   }
 }
 
 .gallery-placeholder {
-  height: 290px;
+  height: 280px;
   display: grid;
   place-items: center;
   color: #64748b;
   font-weight: 900;
 }
 
-/* Thumbs */
 .gallery-thumbs {
   margin-top: 12px;
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 10px;
 }
-
 @media (max-width: 980px) {
   .gallery-thumbs {
     grid-template-columns: repeat(4, 1fr);
@@ -103,52 +89,45 @@
 }
 
 .thumb {
-  height: 72px;
   border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 0;
   background: #fff;
   cursor: pointer;
   overflow: hidden;
+  height: 70px;
   transition: 0.15s ease;
 }
-
 .thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-
 .thumb:hover {
   transform: translateY(-1px);
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
 }
-
 .thumb.active {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
-/* -------------------------
-   INFO CARD (RIGHT)
--------------------------- */
+/* Info card */
 .vehicle-info {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
   padding: 16px;
-  position: sticky;
-  top: 14px;
-}
-
-@media (max-width: 980px) {
-  .vehicle-info {
-    position: static;
-  }
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.06);
+  display: grid;
+  gap: 14px;
 }
 
 .vehicle-title {
   margin: 0;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 1000;
   color: #0f172a;
 }
 
@@ -158,11 +137,10 @@
   align-items: center;
   gap: 8px;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 1000;
   color: #2563eb;
 }
 
-/* Meta pills */
 .vehicle-meta {
   margin-top: 12px;
   display: grid;
@@ -178,26 +156,26 @@
   gap: 8px;
   background: #f8fafc;
   border: 1px solid #eef2f7;
-  border-radius: 14px;
+  border-radius: 12px;
   padding: 10px 12px;
 }
 
 .vehicle-description {
   margin-top: 12px;
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.5;
   color: #334155;
-  border: 1px dashed #e2e8f0;
-  border-radius: 16px;
-  padding: 12px;
   background: #fff;
+  border: 1px dashed #e2e8f0;
+  border-radius: 14px;
+  padding: 12px;
 }
 
 /* Actions */
 .vd-actions {
-  margin-top: 14px;
+  margin-top: 6px;
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .vd-wa-btn {
@@ -205,27 +183,106 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  width: 100%;
   text-decoration: none;
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 12px 14px;
   font-size: 13px;
-  font-weight: 900;
+  font-weight: 1000;
   border: 1px solid rgba(16, 185, 129, 0.35);
   background: rgba(16, 185, 129, 0.12);
   color: #065f46;
-  transition: 0.15s ease;
 }
-
 .vd-wa-btn:hover {
-  transform: translateY(-1px);
   background: rgba(16, 185, 129, 0.18);
 }
 
 .vd-note {
+  margin-top: -6px;
   font-size: 12px;
   color: #64748b;
-  line-height: 1.35;
+}
+
+/* Form */
+.vd-form {
+  margin-top: 6px;
+  border-top: 1px solid #eef2f7;
+  padding-top: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+.vd-form-title {
+  font-size: 13px;
+  font-weight: 1000;
+  color: #0f172a;
+}
+
+.vd-label {
+  font-size: 12px;
+  font-weight: 900;
+  color: #334155;
+  margin-top: 4px;
+}
+
+.vd-input,
+.vd-textarea {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  font-size: 13px;
+  padding: 10px 12px;
+  outline: none;
+  transition: 0.15s ease;
+}
+
+.vd-textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.vd-input:focus,
+.vd-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.vd-submit {
+  margin-top: 8px;
+  border: none;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 13px;
+  font-weight: 1000;
+  cursor: pointer;
+  background: #0f172a;
+  color: #fff;
+  transition: 0.15s ease;
+}
+.vd-submit:hover {
+  transform: translateY(-1px);
+  opacity: 0.96;
+}
+.vd-submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.vd-form-msg {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-weight: 900;
+}
+.vd-form-msg.success {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #065f46;
+}
+.vd-form-msg.error {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  color: #991b1b;
 }
 
 /* Loading & Error */
@@ -237,19 +294,16 @@
   color: #334155;
   font-weight: 900;
 }
-
 .vd-error {
   padding: 16px;
   background: #fff5f5;
   border: 1px solid #fecaca;
   border-radius: 14px;
 }
-
 .vd-error-title {
-  font-weight: 900;
+  font-weight: 1000;
   color: #991b1b;
 }
-
 .vd-error-text {
   margin-top: 6px;
   color: #7f1d1d;
@@ -262,31 +316,24 @@
   right: 18px;
   bottom: 18px;
   z-index: 9999;
-
   display: inline-flex;
   align-items: center;
   gap: 10px;
-
   padding: 12px 14px;
   border-radius: 999px;
-
   text-decoration: none;
-  font-weight: 900;
+  font-weight: 1000;
   font-size: 13px;
-
   border: 1px solid rgba(16, 185, 129, 0.35);
   background: rgba(16, 185, 129, 0.12);
   color: #065f46;
-
   box-shadow: 0 16px 35px rgba(15, 23, 42, 0.18);
   transition: 0.15s ease;
 }
-
 .wa-float svg {
   font-size: 18px;
 }
-
 .wa-float:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
   background: rgba(16, 185, 129, 0.18);
 }

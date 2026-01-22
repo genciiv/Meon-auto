@@ -2,13 +2,24 @@ import mongoose from "mongoose";
 
 const leadSchema = new mongoose.Schema(
   {
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     vehicleId: { type: mongoose.Schema.Types.ObjectId, ref: "Vehicle", required: true },
 
-    message: { type: String, trim: true, required: true, minlength: 3 },
-    phone: { type: String, trim: true }, // opsionale
+    // info nga klienti
+    name: { type: String, trim: true, default: "" },
+    phone: { type: String, trim: true, default: "" },
+    message: { type: String, trim: true, default: "" },
 
-    channel: { type: String, enum: ["form", "whatsapp"], default: "form" },
+    // nga ku erdhi
+    source: { type: String, enum: ["whatsapp", "form"], default: "form" },
+
+    // metadata
+    pageUrl: { type: String, trim: true, default: "" },
+    userAgent: { type: String, trim: true, default: "" },
+    ip: { type: String, trim: true, default: "" },
+
+    // status
+    status: { type: String, enum: ["new", "contacted", "closed"], default: "new" },
+    notes: { type: String, trim: true, default: "" },
   },
   { timestamps: true }
 );

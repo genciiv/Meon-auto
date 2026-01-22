@@ -3,7 +3,6 @@ import cors from "cors";
 import dotenv from "dotenv";
 import "./loadEnv.js";
 
-
 import { connectDB } from "./config/db.js";
 
 import authRoutes from "./routes/auth.routes.js";
@@ -13,6 +12,9 @@ import blogRoutes from "./routes/blog.routes.js";
 import adminRoutes from "./routes/admin.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 
+// ✅ NEW
+import leadsRoutes from "./routes/leads.routes.js";
+import adminLeadsRoutes from "./routes/admin.leads.routes.js";
 
 dotenv.config();
 
@@ -37,6 +39,9 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/upload", uploadRoutes);
 
+// ✅ Leads
+app.use("/api/leads", leadsRoutes);
+app.use("/api/admin/leads", adminLeadsRoutes);
 
 // Error fallback
 app.use((err, req, res, next) => {
